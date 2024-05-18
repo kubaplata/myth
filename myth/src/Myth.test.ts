@@ -8,14 +8,26 @@ import {
     Signature, NetworkId,
 } from 'o1js';
 import { Client } from "mina-signer";
+import axios from "axios";
 
 const client = new Client({
     network: process.env.NETWORK_KIND as NetworkId ?? 'testnet'
 });
 
 let proofsEnabled = false;
-const MYTH_PUBLIC_KEY = 'B62qoAE4rBRuTgC42vqvEyUqCGhaZsW58SKVW4Ht8aYqP9UTvxFWBgy';
-let privateKey = process.env.PRIVATE_KEY ?? 'EKF65JKw9Q1XWLDZyZNGysBbYG21QbJf3a4xnEoZPZ28LKYGMw53';
+const MYTH_PUBLIC_KEY = 'B62qjUYdttVRLHGc1tiPhV6jtoH4NxvuBuL4zsQV1te8Pq4efP2EyD1';
+const MYTH_ORACLE_URL = "https://myth-one.vercel.app/api/price";
+let privateKey = process.env.PRIVATE_KEY ?? 'EKFUerPvxQaUkRsLyAm5rRTcEJ5bFES9KFSWoc6sCYzM76tziKxf';
+
+type MythResponse = {
+    data: {
+        price: `${number}`,
+        maxAge: number,
+        feed: string // hex
+    },
+    signature: string,
+    publicKey: string
+}
 
 describe('OracleExample', () => {
     let deployerAccount: Mina.TestPublicKey,
@@ -118,46 +130,45 @@ describe('OracleExample', () => {
     });
 
     describe('actual API requests', () => {
-        it('emits an `id` event containing the users id if their credit score is above 700 and the provided signature is valid', async () => {
+        it('emits an `price` event containing the pyth feed price if the provided signature is valid', async () => {
             await localDeploy();
 
-            const response = await fetch(
-                'https://07-oracles.vercel.app/api/credit-score?user=1'
+            const response = await axios.post<MythResponse>(
+                MYTH_ORACLE_URL,
+                {
+                    feed: "0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43",
+                    maxAge: 600 // 10 minutes
+                }
             );
-            const data = await response.json();
+            const {
+                signature,
+                publicKey,
+                data: {
+                    price,
+                    maxAge,
+                    feed
+                }
+            } = response.data;
 
-            const id = Field(data.data.id);
-            const creditScore = Field(data.data.creditScore);
-            const signature = Signature.fromBase58(data.signature);
+            const maxAgeField = Field(maxAge);
+            // feed id - BTC/USD
+            const feedField = Field(BigInt(feed).toString());
+            const feedPriceField = Field(price);
 
             const txn = await Mina.transaction(senderAccount, async () => {
-                await zkApp.verify(id, creditScore, signature);
+                await zkApp.verify(
+                    feedPriceField,
+                    maxAgeField,
+                    feedField,
+                    Signature.fromBase58(signature)
+                );
             });
             await txn.prove();
             await txn.sign([senderKey]).send();
 
             const events = await zkApp.fetchEvents();
             const verifiedEventValue = events[0].event.data.toFields(null)[0];
-            expect(verifiedEventValue).toEqual(id);
-        });
-
-        it('throws an error if the credit score is below 700 even if the provided signature is valid', async () => {
-            await localDeploy();
-
-            const response = await fetch(
-                'https://07-oracles.vercel.app/api/credit-score?user=2'
-            );
-            const data = await response.json();
-
-            const id = Field(data.data.id);
-            const creditScore = Field(data.data.creditScore);
-            const signature = Signature.fromBase58(data.signature);
-
-            expect(async () => {
-                const txn = await Mina.transaction(senderAccount, async () => {
-                    await zkApp.verify(id, creditScore, signature);
-                });
-            }).rejects;
+            expect(verifiedEventValue).toEqual(feedPriceField);
         });
     });
 });

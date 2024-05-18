@@ -6,7 +6,7 @@ import Client, { NetworkId } from 'mina-signer';
 const client = new Client({
   network: process.env.NETWORK_KIND as NetworkId ?? 'testnet'
 });
-let privateKey = process.env.PRIVATE_KEY ?? 'EKF65JKw9Q1XWLDZyZNGysBbYG21QbJf3a4xnEoZPZ28LKYGMw53';
+let privateKey = process.env.PRIVATE_KEY ?? 'EKFUerPvxQaUkRsLyAm5rRTcEJ5bFES9KFSWoc6sCYzM76tziKxf';
 
 const connection = new PriceServiceConnection("https://hermes.pyth.network");
 const priceRouter = Router();
