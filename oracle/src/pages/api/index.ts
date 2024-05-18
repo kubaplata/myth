@@ -3,6 +3,6 @@ import {priceRouter} from "./routers/price";
 
 const app = express();
 
-app.use("/price", priceRouter);
+app.use("/api/price", priceRouter);
 
 export default app;
