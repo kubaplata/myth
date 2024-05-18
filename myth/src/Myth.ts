@@ -8,7 +8,7 @@ import {
     Signature,
 } from 'o1js';
 
-const MYTH_PUBLIC_KEY = 'B62qoAE4rBRuTgC42vqvEyUqCGhaZsW58SKVW4Ht8aYqP9UTvxFWBgy';
+const MYTH_PUBLIC_KEY = 'B62qjUYdttVRLHGc1tiPhV6jtoH4NxvuBuL4zsQV1te8Pq4efP2EyD1';
 
 export class Myth extends SmartContract {
     @state(PublicKey) mythPublicKey = State<PublicKey>();
