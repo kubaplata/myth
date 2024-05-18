@@ -23,13 +23,15 @@ priceRouter.post(
       feed,
       maxAge // in seconds
     } : PriceRequestParams = req.body;
-    const priceFeed = await connection.getPriceFeed(
-      feed,
-      Date.now() - (maxAge * 1000)
+    const priceFeed = await connection.getLatestPriceFeeds(
+      [feed],
     );
 
-    const price = priceFeed.getPriceNoOlderThan(maxAge);
+    if (!priceFeed || !priceFeed.length) throw "Failed to fetch the feed.";
+
+    const price = priceFeed[0].getPriceNoOlderThan(maxAge);
     if (!price) throw "Failed to fetch the price. Try increasing `maxAge`";
+
     const {
       price: feedPrice
     } = price;
