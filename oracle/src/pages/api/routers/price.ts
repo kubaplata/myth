@@ -49,15 +49,15 @@ priceRouter.post(
       privateKey
     );
 
-    return {
-      data: {
-        price: feedPrice,
-        maxAge: maxAge,
-        feed: feed,
-      },
-      signature,
-      publicKey
-    };
+    res.status(200).json({
+        data: {
+            price: feedPrice,
+            maxAge: maxAge,
+            feed: feed,
+        },
+        signature,
+        publicKey
+    });
   }
 );
 
